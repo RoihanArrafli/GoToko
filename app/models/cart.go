@@ -130,3 +130,4 @@ func (c *Cart) AddItem(db *gorm.DB, item CartItem) (*CartItem, error) {
 
 	return &item, nil
 }
+

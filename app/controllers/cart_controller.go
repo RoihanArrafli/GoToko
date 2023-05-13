@@ -7,6 +7,7 @@ import (
 
 	"github.com/RoihanArrafli/GoToko/app/models"
 	"github.com/google/uuid"
+	"github.com/unrolled/render"
 	"gorm.io/gorm"
 )
 
@@ -34,13 +35,21 @@ func GetShoppingCart(db *gorm.DB, cartID string) (*models.Cart, error) {
 }
 
 func (server *Server) GetCart(w http.ResponseWriter, r *http.Request) {
+	render := render.New(render.Options{
+		Layout: "layout",
+	})
+
 	var cart *models.Cart
 
 	cartID := GetShoppingCartID(w, r)
 	cart, _ = GetShoppingCart(server.DB, cartID)
 
-	fmt.Println("cart id ===> ", cart.ID)
-	fmt.Println("cart items ===> ", cart.CartItems)
+	_ = render.HTML(w, http.StatusOK, "cart", map[string]interface{}{
+		"cart": cart,
+	})
+
+	// fmt.Println("cart id ===> ", cart.ID)
+	// fmt.Println("cart items ===> ", cart.CartItems)
 }
 
 func (server *Server) AddItemToCart(w http.ResponseWriter, r *http.Request) {
@@ -71,4 +80,20 @@ func (server *Server) AddItemToCart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/carts", http.StatusSeeOther)
+}
+
+func (server *Server) UpdateCart(w http.ResponseWriter, r *http.Request) {
+	cartID := GetShoppingCartID(w, r)
+	cart, _ := GetShoppingCart(server.DB, cartID)
+
+	for _, item := range cart.CartItems {
+		qty, _ := strconv.Atoi(r.FormValue(item.ID))
+
+		_, err := cart.UpdateItemQty(server.DB, item.ID, qty)
+		if err != nil {
+			http.Redirect(w, r, "/carts", http.StatusSeeOther)
+		}
+	}
+
+	// fmt.Println("update cart", cart)
 }
